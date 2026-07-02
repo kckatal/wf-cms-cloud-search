@@ -1,5 +1,16 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "exclude": ["dist"],
+  "compilerOptions": {
+    "types": ["node"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    // DevLink generates webflow/* with non-type-only imports; relax this one
+    // strict flag so the generated code typechecks without manual edits.
+    "verbatimModuleSyntax": false,
+    "paths": {
+      "webflow/*": ["./webflow/*"]
+    }
+  }
 }

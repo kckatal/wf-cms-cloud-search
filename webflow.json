@@ -1,0 +1,21 @@
+{
+  "siteId": "6a3ee562ea51d6c9ddc156c7",
+  "devlink-export": {
+    "rootDir": "./webflow",
+    "components": ".*",
+    "componentGroups": ".*",
+    "ts": true,
+    "cssScopes": true,
+    "relativeHrefRoot": "/"
+  },
+  "telemetry": {
+    "global": {
+      "allowTelemetry": true,
+      "lastPrompted": 1782513967427,
+      "version": "2.0.0"
+    }
+  },
+  "cloud": {
+    "framework": "astro"
+  }
+}
