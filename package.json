@@ -12,6 +12,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro build && wrangler dev",
+    "postinstall": "node scripts/patch-cloudflare-for-webflow.mjs",
     "build:index": "node --env-file-if-exists=.env --import tsx ./scripts/build-index.ts",
     "astro": "astro"
   },
