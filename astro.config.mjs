@@ -7,9 +7,6 @@ export default defineConfig({
 
 // Server you app and assets from the correct mount path
   base: "CLOUD_MOUNT_PATH",
-  // build: {
-  //   assetsPrefix: "CLOUD_MOUNT_PATH",
-  // },
   output: "server", // Use the server output mode
 
   // Use the Cloudflare adapter
