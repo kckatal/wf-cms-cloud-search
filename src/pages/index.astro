@@ -37,6 +37,8 @@ const areaName = state.area
   ? (areaOptions.find((a) => a.slug === state.area)?.name ?? "California")
   : "California";
 const pageTitle = `Real estate agents in ${areaName}`;
+
+const assetsBase = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
 ---
 
 <html lang="en">

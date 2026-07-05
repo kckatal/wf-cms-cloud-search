@@ -16,7 +16,6 @@
     }
   },
   "cloud": {
-    "framework": "astro",
-    "assets_source_skip_mount_path": false
+    "framework": "astro"
   }
 }

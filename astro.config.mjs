@@ -3,9 +3,8 @@ import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
 
 // https://astro.build/config
-//
-// `CLOUD_MOUNT_PATH` is replaced by Webflow Cloud's builder with your mount path
-// (e.g. /find-an-agent). Do not hardcode the mount path or set build.assetsPrefix.
+// Webflow Cloud replaces this file at build time; keep aligned with the official
+// starter: https://github.com/Webflow-Examples/hello-world-astro
 export default defineConfig({
   base: "CLOUD_MOUNT_PATH",
   output: "server",
@@ -14,7 +13,6 @@ export default defineConfig({
     platformProxy: {
       enabled: true,
     },
-    imageService: "cloudflare-binding",
   }),
   integrations: [react()],
   vite: {
