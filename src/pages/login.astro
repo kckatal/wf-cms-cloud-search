@@ -105,8 +105,8 @@ const apiMeUrl = appPath("api/me");
         {
           !authReady && (
             <p class="login__notice">
-              Auth0 is not configured yet. Add the variables in <code>.env.example</code>{" "}
-              to enable login locally.
+              Auth0 environment variables are not available. Add them in Webflow Cloud
+              → Environment Variables (or <code>.env</code> for local dev).
             </p>
           )
         }

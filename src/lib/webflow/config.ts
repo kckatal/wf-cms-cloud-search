@@ -2,10 +2,13 @@
  * Webflow Data API configuration.
  *
  * Values come from environment variables so the same code runs in the build
- * script (Node + `--env-file`) and in Astro server routes. The collection /
- * site IDs default to the discovered "Woodland Properties" site, but every
- * value can be overridden via env.
+ * script (Node + `--env-file`), local Astro dev (`.env`), and Webflow Cloud
+ * (`locals.runtime.env` via middleware).
  */
+
+import { readEnv } from "../env";
+
+export { readEnv };
 
 export const WEBFLOW_API_BASE = "https://api.webflow.com/v2";
 
@@ -28,19 +31,6 @@ const DEFAULTS = {
     specialties: "6a3ee77638f548e2e9600bb7",
   },
 } as const;
-
-/**
- * Read an env var from whichever runtime we're in. The build script uses Node's
- * `process.env`; Astro server routes expose secrets on `import.meta.env`.
- */
-export function readEnv(name: string): string | undefined {
-  if (typeof process !== "undefined" && process.env?.[name]) {
-    return process.env[name];
-  }
-  // `import.meta.env` is an object at runtime in SSR; guard for the build script.
-  const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
-  return metaEnv?.[name];
-}
 
 let cached: WebflowConfig | null = null;
 
