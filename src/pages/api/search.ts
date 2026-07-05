@@ -18,6 +18,9 @@ import { searchAgents, SORT_KEYS, type SearchParams, type SortKey } from "../../
 
 // Run on-demand (the search index is queried per request, not prerendered).
 export const prerender = false;
+export const config = {
+  runtime: "edge",
+};
 
 function parseNumber(value: string | null): number | undefined {
   if (value == null || value.trim() === "") return undefined;

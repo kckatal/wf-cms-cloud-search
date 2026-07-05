@@ -42,8 +42,6 @@ const pageTitle = `Real estate agents in ${areaName}`;
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <title>Find a real estate agent — Woodland Properties</title>
@@ -58,9 +56,13 @@ const pageTitle = `Real estate agents in ${areaName}`;
         <div class="field field--with-clear">
           <select class="field__select" id="area" aria-label="Area">
             <option value="">All areas</option>
-            {areaOptions.map((a) => (
-              <option value={a.slug} selected={a.slug === state.area}>{a.name} ({a.count})</option>
-            ))}
+            {
+              areaOptions.map((a) => (
+                <option value={a.slug} selected={a.slug === state.area}>
+                  {a.name} ({a.count})
+                </option>
+              ))
+            }
           </select>
         </div>
         <div class="field">
@@ -81,22 +83,56 @@ const pageTitle = `Real estate agents in ${areaName}`;
         <div class="field field--inline">
           <select class="field__select" id="specialty" aria-label="Specialty">
             <option value="">All specialties</option>
-            {specialtyOptions.map((s) => (
-              <option value={s.slug} selected={s.slug === state.specialty}>{s.name} ({s.count})</option>
-            ))}
+            {
+              specialtyOptions.map((s) => (
+                <option value={s.slug} selected={s.slug === state.specialty}>
+                  {s.name} ({s.count})
+                </option>
+              ))
+            }
           </select>
         </div>
         <div class="field field--inline">
-          <select class="field__select" id="minRating" aria-label="Minimum rating">
-            <option value="" selected={state.minRating === ""}>Any rating</option>
-            <option value="5" selected={state.minRating === "5"}>5 stars</option>
-            <option value="4" selected={state.minRating === "4"}>4+ stars</option>
-            <option value="3" selected={state.minRating === "3"}>3+ stars</option>
+          <select
+            class="field__select"
+            id="minRating"
+            aria-label="Minimum rating"
+          >
+            <option value="" selected={state.minRating === ""}
+              >Any rating</option
+            >
+            <option value="5" selected={state.minRating === "5"}>5 stars</option
+            >
+            <option value="4" selected={state.minRating === "4"}
+              >4+ stars</option
+            >
+            <option value="3" selected={state.minRating === "3"}
+              >3+ stars</option
+            >
           </select>
         </div>
-        <div class="segmented" role="group" aria-label="Agent type" id="realtor-toggle">
-          <button type="button" class:list={["segmented__btn", { "is-active": state.realtor === "" }]} data-value="">All agents</button>
-          <button type="button" class:list={["segmented__btn", { "is-active": state.realtor === "1" }]} data-value="1">REALTORS® only</button>
+        <div
+          class="segmented"
+          role="group"
+          aria-label="Agent type"
+          id="realtor-toggle"
+        >
+          <button
+            type="button"
+            class:list={[
+              "segmented__btn",
+              { "is-active": state.realtor === "" },
+            ]}
+            data-value="">All agents</button
+          >
+          <button
+            type="button"
+            class:list={[
+              "segmented__btn",
+              { "is-active": state.realtor === "1" },
+            ]}
+            data-value="1">REALTORS® only</button
+          >
         </div>
       </div>
 
@@ -106,21 +142,36 @@ const pageTitle = `Real estate agents in ${areaName}`;
         <label class="results-head__sort">
           Sort by
           <select id="sort" aria-label="Sort by">
-            <option value="relevance" selected={state.sort === "relevance"}>Relevant agents</option>
-            <option value="rating" selected={state.sort === "rating"}>Highest rated</option>
-            <option value="sales" selected={state.sort === "sales"}>Most sales</option>
-            <option value="experience" selected={state.sort === "experience"}>Most experience</option>
+            <option value="relevance" selected={state.sort === "relevance"}
+              >Relevant agents</option
+            >
+            <option value="rating" selected={state.sort === "rating"}
+              >Highest rated</option
+            >
+            <option value="sales" selected={state.sort === "sales"}
+              >Most sales</option
+            >
+            <option value="experience" selected={state.sort === "experience"}
+              >Most experience</option
+            >
           </select>
         </label>
       </div>
 
-      <div class="results" id="results" set:html={cards}></div>
+      <div class="results" id="results" set:html={cards} />
 
-      <p class="empty" id="empty" hidden={data.total !== 0}>No agents match your filters. Try broadening your search.</p>
+      <p class="empty" id="empty" hidden={data.total !== 0}>
+        No agents match your filters. Try broadening your search.
+      </p>
 
-      <nav class="pagination" id="pagination" aria-label="Search results pages" set:html={paginationHtml}></nav>
+      <nav
+        class="pagination"
+        id="pagination"
+        aria-label="Search results pages"
+        set:html={paginationHtml}
+      />
     </main>
-    <SiteFooter client:visible/>
+    <SiteFooter client:visible />
 
     <script>
       import { renderCard } from "../lib/ui/card";
@@ -136,10 +187,16 @@ const pageTitle = `Real estate agents in ${areaName}`;
       const form = document.getElementById("search-form") as HTMLFormElement;
       const qInput = document.getElementById("q") as HTMLInputElement;
       const areaSel = document.getElementById("area") as HTMLSelectElement;
-      const specialtySel = document.getElementById("specialty") as HTMLSelectElement;
-      const minRatingSel = document.getElementById("minRating") as HTMLSelectElement;
+      const specialtySel = document.getElementById(
+        "specialty",
+      ) as HTMLSelectElement;
+      const minRatingSel = document.getElementById(
+        "minRating",
+      ) as HTMLSelectElement;
       const sortSel = document.getElementById("sort") as HTMLSelectElement;
-      const realtorToggle = document.getElementById("realtor-toggle") as HTMLDivElement;
+      const realtorToggle = document.getElementById(
+        "realtor-toggle",
+      ) as HTMLDivElement;
       const resultsEl = document.getElementById("results") as HTMLDivElement;
       const countEl = document.getElementById("count") as HTMLSpanElement;
       const titleEl = document.getElementById("title") as HTMLHeadingElement;
@@ -148,7 +205,9 @@ const pageTitle = `Real estate agents in ${areaName}`;
 
       /** Read the current filter state from the form controls. */
       function readControls(): FilterState {
-        const active = realtorToggle.querySelector(".segmented__btn.is-active") as HTMLElement | null;
+        const active = realtorToggle.querySelector(
+          ".segmented__btn.is-active",
+        ) as HTMLElement | null;
         return {
           q: qInput.value.trim(),
           area: areaSel.value,
@@ -169,14 +228,20 @@ const pageTitle = `Real estate agents in ${areaName}`;
         realtorToggle
           .querySelectorAll(".segmented__btn")
           .forEach((b) =>
-            b.classList.toggle("is-active", (b as HTMLElement).dataset.value === state.realtor),
+            b.classList.toggle(
+              "is-active",
+              (b as HTMLElement).dataset.value === state.realtor,
+            ),
           );
       }
 
       function updateTitle(state: FilterState) {
         const areaName =
           areaSel.selectedIndex > 0
-            ? areaSel.options[areaSel.selectedIndex].text.replace(/\s*\(\d+\)\s*$/, "")
+            ? areaSel.options[areaSel.selectedIndex].text.replace(
+                /\s*\(\d+\)\s*$/,
+                "",
+              )
             : "California";
         titleEl.textContent = `Real estate agents in ${areaName}`;
         void state;
@@ -197,16 +262,23 @@ const pageTitle = `Real estate agents in ${areaName}`;
         api.set("offset", String((page - 1) * PAGE_SIZE));
 
         try {
-          const res = await fetch(`/api/search?${api.toString()}`);
+          const basePath = import.meta.env.BASE_URL || "";
+          const res = await fetch(`${basePath}/api/search?${api.toString()}`);
           if (!res.ok) throw new Error(`Search failed (${res.status})`);
           const data = await res.json();
 
           resultsEl.innerHTML = data.results.map(renderCard).join("");
           countEl.textContent = `${data.total.toLocaleString()} agent${data.total === 1 ? "" : "s"} found`;
           emptyEl.hidden = data.total !== 0;
-          paginationEl.innerHTML = renderPagination(page, data.total, PAGE_SIZE, state);
+          paginationEl.innerHTML = renderPagination(
+            page,
+            data.total,
+            PAGE_SIZE,
+            state,
+          );
         } catch (err) {
-          countEl.textContent = err instanceof Error ? err.message : "Search failed";
+          countEl.textContent =
+            err instanceof Error ? err.message : "Search failed";
         }
       }
 
@@ -234,7 +306,9 @@ const pageTitle = `Real estate agents in ${areaName}`;
       );
 
       realtorToggle.addEventListener("click", (e) => {
-        const btn = (e.target as HTMLElement).closest(".segmented__btn") as HTMLButtonElement | null;
+        const btn = (e.target as HTMLElement).closest(
+          ".segmented__btn",
+        ) as HTMLButtonElement | null;
         if (!btn) return;
         realtorToggle
           .querySelectorAll(".segmented__btn")
@@ -244,7 +318,9 @@ const pageTitle = `Real estate agents in ${areaName}`;
 
       // Intercept pagination link clicks for in-place page changes.
       paginationEl.addEventListener("click", (e) => {
-        const link = (e.target as HTMLElement).closest("a[data-page]") as HTMLElement | null;
+        const link = (e.target as HTMLElement).closest(
+          "a[data-page]",
+        ) as HTMLElement | null;
         if (!link) return;
         e.preventDefault();
         const page = Number(link.dataset.page);
@@ -273,100 +349,383 @@ const pageTitle = `Real estate agents in ${areaName}`;
         --blue: #2b6cb0;
         --promo: #e7edfb;
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
         color: var(--ink);
         background: #fff;
         line-height: 1.45;
       }
-      .page { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
-      .page__title { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 1.25rem; }
+      .page {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 4rem;
+      }
+      .page__title {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 0 0 1.25rem;
+      }
 
       /* Search + filters */
-      .search { display: flex; gap: 0.75rem; margin-bottom: 0.85rem; flex-wrap: wrap; }
-      .filters { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
-      .field { position: relative; flex: 1 1 220px; }
-      .field--inline { flex: 0 0 auto; }
-      .field__input, .field__select {
-        width: 100%; height: 48px; padding: 0 1rem; font-size: 1rem; color: var(--ink);
-        background: #fff; border: 1.5px solid var(--line); border-radius: 12px; appearance: none;
+      .search {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.85rem;
+        flex-wrap: wrap;
       }
-      .field__select { padding-right: 2.25rem; cursor: pointer; background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%231d1b18' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-        background-repeat: no-repeat; background-position: right 1rem center; }
-      .field__input:focus, .field__select:focus { outline: none; border-color: var(--dark); }
+      .filters {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .field {
+        position: relative;
+        flex: 1 1 220px;
+      }
+      .field--inline {
+        flex: 0 0 auto;
+      }
+      .field__input,
+      .field__select {
+        width: 100%;
+        height: 48px;
+        padding: 0 1rem;
+        font-size: 1rem;
+        color: var(--ink);
+        background: #fff;
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        appearance: none;
+      }
+      .field__select {
+        padding-right: 2.25rem;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%231d1b18' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+      }
+      .field__input:focus,
+      .field__select:focus {
+        outline: none;
+        border-color: var(--dark);
+      }
 
-      .btn { font-size: 1rem; font-weight: 600; border-radius: 999px; padding: 0 1.5rem; height: 48px; cursor: pointer; border: 1.5px solid transparent; }
-      .btn--primary { background: var(--dark); color: #fff; }
-      .btn--primary:hover { background: #2b2724; }
-      .btn--ghost { background: #fff; border-color: var(--line); color: var(--ink); }
-      .btn--ghost:hover { border-color: var(--dark); }
+      .btn {
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 0 1.5rem;
+        height: 48px;
+        cursor: pointer;
+        border: 1.5px solid transparent;
+      }
+      .btn--primary {
+        background: var(--dark);
+        color: #fff;
+      }
+      .btn--primary:hover {
+        background: #2b2724;
+      }
+      .btn--ghost {
+        background: #fff;
+        border-color: var(--line);
+        color: var(--ink);
+      }
+      .btn--ghost:hover {
+        border-color: var(--dark);
+      }
 
-      .segmented { display: inline-flex; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; }
-      .segmented__btn { height: 48px; padding: 0 1.1rem; background: #fff; border: none; font-size: 0.95rem; cursor: pointer; color: var(--ink); }
-      .segmented__btn.is-active { background: var(--cream); font-weight: 600; }
-      .segmented__btn + .segmented__btn { border-left: 1.5px solid var(--line); }
+      .segmented {
+        display: inline-flex;
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .segmented__btn {
+        height: 48px;
+        padding: 0 1.1rem;
+        background: #fff;
+        border: none;
+        font-size: 0.95rem;
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .segmented__btn.is-active {
+        background: var(--cream);
+        font-weight: 600;
+      }
+      .segmented__btn + .segmented__btn {
+        border-left: 1.5px solid var(--line);
+      }
 
       /* Promo */
-      .promo { display: flex; align-items: center; gap: 1.25rem; background: var(--promo); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.75rem; }
-      .promo__art { font-size: 2.5rem; line-height: 1; }
-      .promo__text { flex: 1; }
-      .promo__text h2 { margin: 0 0 0.25rem; font-size: 1.3rem; }
-      .promo__text p { margin: 0; color: #3a4256; }
-      .promo__cta { flex: 0 0 auto; }
+      .promo {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        background: var(--promo);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.75rem;
+      }
+      .promo__art {
+        font-size: 2.5rem;
+        line-height: 1;
+      }
+      .promo__text {
+        flex: 1;
+      }
+      .promo__text h2 {
+        margin: 0 0 0.25rem;
+        font-size: 1.3rem;
+      }
+      .promo__text p {
+        margin: 0;
+        color: #3a4256;
+      }
+      .promo__cta {
+        flex: 0 0 auto;
+      }
 
       /* Info */
-      .info { display: flex; gap: 1rem; margin-bottom: 2rem; }
-      .info__logo { flex: 0 0 56px; height: 56px; display: grid; place-items: center; border: 2px solid var(--blue); color: var(--blue); font-weight: 800; font-size: 1.5rem; border-radius: 6px; }
-      .info__title { margin: 0 0 0.25rem; font-size: 1.05rem; }
-      .info__body { margin: 0; color: var(--muted); font-size: 0.95rem; }
+      .info {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      .info__logo {
+        flex: 0 0 56px;
+        height: 56px;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--blue);
+        color: var(--blue);
+        font-weight: 800;
+        font-size: 1.5rem;
+        border-radius: 6px;
+      }
+      .info__title {
+        margin: 0 0 0.25rem;
+        font-size: 1.05rem;
+      }
+      .info__body {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
 
       /* Results header */
-      .results-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--line); padding-bottom: 0.75rem; }
-      .results-head__count { font-weight: 700; }
-      .results-head__sort { color: var(--muted); font-size: 0.95rem; display: inline-flex; gap: 0.4rem; align-items: center; }
-      .results-head__sort select { border: none; background: none; font: inherit; font-weight: 700; color: var(--ink); cursor: pointer; text-decoration: underline; }
+      .results-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.75rem;
+      }
+      .results-head__count {
+        font-weight: 700;
+      }
+      .results-head__sort {
+        color: var(--muted);
+        font-size: 0.95rem;
+        display: inline-flex;
+        gap: 0.4rem;
+        align-items: center;
+      }
+      .results-head__sort select {
+        border: none;
+        background: none;
+        font: inherit;
+        font-weight: 700;
+        color: var(--ink);
+        cursor: pointer;
+        text-decoration: underline;
+      }
 
       /* Results */
-      .results { display: flex; flex-direction: column; gap: 1rem; }
-      .empty { color: var(--muted); padding: 2rem 0; text-align: center; }
-      .agent-card { display: flex; gap: 1.25rem; border: 1px solid #ececec; border-radius: 16px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-      .agent-card__photo { flex: 0 0 96px; width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: #f0f0f0; }
-      .agent-card__photo--fallback { display: grid; place-items: center; font-size: 2rem; font-weight: 700; color: var(--muted); }
-      .agent-card__body { flex: 1; min-width: 0; }
-      .agent-card__name { margin: 0 0 0.15rem; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
-      .agent-card__name a { color: var(--ink); text-decoration: underline; }
-      .realtor-badge { display: inline-grid; place-items: center; width: 20px; height: 20px; font-size: 0.7rem; font-weight: 800; color: var(--blue); border: 1.5px solid var(--blue); border-radius: 3px; }
-      .agent-card__company { margin: 0 0 0.75rem; color: var(--muted); }
-      .agent-card__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 2rem; }
-      .agent-card__rating { display: flex; align-items: center; gap: 0.4rem; }
-      .stars { color: var(--line); letter-spacing: 1px; }
-      .star--on { color: #1d1b18; }
-      .agent-card__meta, .agent-card__sales, .agent-card__price { color: var(--muted); font-size: 0.95rem; }
-      .agent-card__price strong, .agent-card__sales strong { color: var(--ink); }
-      .agent-card__areas { margin: 0.75rem 0 0; color: var(--muted); font-size: 0.9rem; }
-      .agent-card__tags { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 0; padding: 0; }
-      .agent-card__tags li { background: var(--cream); border-radius: 999px; padding: 0.15rem 0.7rem; font-size: 0.8rem; color: #4a463f; }
+      .results {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .empty {
+        color: var(--muted);
+        padding: 2rem 0;
+        text-align: center;
+      }
+      .agent-card {
+        display: flex;
+        gap: 1.25rem;
+        border: 1px solid #ececec;
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .agent-card__photo {
+        flex: 0 0 96px;
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #f0f0f0;
+      }
+      .agent-card__photo--fallback {
+        display: grid;
+        place-items: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .agent-card__body {
+        flex: 1;
+        min-width: 0;
+      }
+      .agent-card__name {
+        margin: 0 0 0.15rem;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .agent-card__name a {
+        color: var(--ink);
+        text-decoration: underline;
+      }
+      .realtor-badge {
+        display: inline-grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--blue);
+        border: 1.5px solid var(--blue);
+        border-radius: 3px;
+      }
+      .agent-card__company {
+        margin: 0 0 0.75rem;
+        color: var(--muted);
+      }
+      .agent-card__stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem 2rem;
+      }
+      .agent-card__rating {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .stars {
+        color: var(--line);
+        letter-spacing: 1px;
+      }
+      .star--on {
+        color: #1d1b18;
+      }
+      .agent-card__meta,
+      .agent-card__sales,
+      .agent-card__price {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .agent-card__price strong,
+      .agent-card__sales strong {
+        color: var(--ink);
+      }
+      .agent-card__areas {
+        margin: 0.75rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .agent-card__tags {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin: 0.6rem 0 0;
+        padding: 0;
+      }
+      .agent-card__tags li {
+        background: var(--cream);
+        border-radius: 999px;
+        padding: 0.15rem 0.7rem;
+        font-size: 0.8rem;
+        color: #4a463f;
+      }
 
       /* Pagination */
-      .pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.4rem; margin-top: 2rem; }
-      .pagination:empty { display: none; }
-      .pagination__page, .pagination__nav {
-        min-width: 40px; height: 40px; padding: 0 0.75rem; display: inline-flex; align-items: center; justify-content: center;
-        border: 1.5px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink);
-        font-size: 0.95rem; font-weight: 600; text-decoration: none; cursor: pointer;
+      .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 2rem;
       }
-      .pagination__page:hover, .pagination__nav:hover { border-color: var(--dark); }
-      .pagination__page.is-current { background: var(--dark); color: #fff; border-color: var(--dark); cursor: default; }
-      .pagination__nav.is-disabled { color: var(--muted); border-color: var(--line); opacity: 0.5; cursor: default; }
-      .pagination__ellipsis { min-width: 24px; text-align: center; color: var(--muted); }
+      .pagination:empty {
+        display: none;
+      }
+      .pagination__page,
+      .pagination__nav {
+        min-width: 40px;
+        height: 40px;
+        padding: 0 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1.5px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .pagination__page:hover,
+      .pagination__nav:hover {
+        border-color: var(--dark);
+      }
+      .pagination__page.is-current {
+        background: var(--dark);
+        color: #fff;
+        border-color: var(--dark);
+        cursor: default;
+      }
+      .pagination__nav.is-disabled {
+        color: var(--muted);
+        border-color: var(--line);
+        opacity: 0.5;
+        cursor: default;
+      }
+      .pagination__ellipsis {
+        min-width: 24px;
+        text-align: center;
+        color: var(--muted);
+      }
 
       @media (max-width: 640px) {
-        .agent-card { flex-direction: column; }
-        .agent-card__stats { grid-template-columns: 1fr; }
-        .field--inline, .segmented { flex: 1 1 100%; }
+        .agent-card {
+          flex-direction: column;
+        }
+        .agent-card__stats {
+          grid-template-columns: 1fr;
+        }
+        .field--inline,
+        .segmented {
+          flex: 1 1 100%;
+        }
       }
     </style>
   </body>
