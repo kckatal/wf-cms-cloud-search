@@ -12,6 +12,8 @@ export interface AuthConfig {
   clientId: string;
   clientSecret: string;
   callbackUrl: string;
+  /** Namespace for custom JWT claims from Auth0 Actions. */
+  claimsNamespace: string;
 }
 
 let cached: AuthConfig | null = null;
@@ -42,9 +44,23 @@ export function getAuthConfig(): AuthConfig {
     clientId: clientId!,
     clientSecret: clientSecret!,
     callbackUrl: callbackUrl!,
+    claimsNamespace:
+      readEnv("AUTH0_CLAIMS_NAMESPACE") ?? "https://anderson-group-stage.webflow.io",
   };
 
   return cached;
+}
+
+/** Logout landing page — derived from callback URL unless overridden. */
+export function getLogoutReturnUrl(config: AuthConfig = getAuthConfig()): string {
+  const explicit = readEnv("AUTH0_LOGOUT_RETURN_URL");
+  if (explicit) return explicit;
+
+  const { callbackUrl } = config;
+  if (callbackUrl.endsWith("/auth/callback")) {
+    return `${callbackUrl.slice(0, -"/auth/callback".length)}/login`;
+  }
+  return callbackUrl.replace(/\/auth\/callback\/?$/, "/login");
 }
 
 /** True when all four Auth0 env vars are present (without throwing). */

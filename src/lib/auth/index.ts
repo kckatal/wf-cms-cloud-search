@@ -1,4 +1,4 @@
-export { getAuthConfig, isAuthConfigured, type AuthConfig } from "./config";
+export { getAuthConfig, getLogoutReturnUrl, isAuthConfigured, type AuthConfig } from "./config";
 export {
   getAuthCookieName,
   getSessionFromRequest,

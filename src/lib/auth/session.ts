@@ -63,9 +63,13 @@ export async function verifyToken(token: string): Promise<JWTPayload> {
 }
 
 function readRoles(payload: JWTPayload): string[] | undefined {
+  const { claimsNamespace } = getAuthConfig();
   const claim =
+    payload[`${claimsNamespace}/roles`] ??
+    payload["https://anderson-group-stage.webflow.io/roles"] ??
     payload["https://woodlandproperties.com/roles"] ??
     payload.roles ??
+    payload[`${claimsNamespace}/role`] ??
     payload["https://woodlandproperties.com/role"];
 
   if (Array.isArray(claim)) return claim.map(String);
@@ -74,7 +78,10 @@ function readRoles(payload: JWTPayload): string[] | undefined {
 }
 
 function readAgentId(payload: JWTPayload): string | undefined {
+  const { claimsNamespace } = getAuthConfig();
   const claim =
+    payload[`${claimsNamespace}/agent_id`] ??
+    payload["https://anderson-group-stage.webflow.io/agent_id"] ??
     payload["https://woodlandproperties.com/agent_id"] ??
     payload.agent_id;
 
