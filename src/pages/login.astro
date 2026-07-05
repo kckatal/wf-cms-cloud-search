@@ -1,0 +1,159 @@
+---
+import SiteNav from "../components/SiteNav";
+import SiteFooter from "../components/SiteFooter";
+import { getSessionFromRequest, isAuthConfigured } from "../lib/auth";
+import { appPath } from "../lib/app-path";
+import "webflow/css/global.css";
+
+export const prerender = false;
+
+const authReady = isAuthConfigured();
+const session = authReady
+  ? await getSessionFromRequest(Astro.request.headers.get("cookie"))
+  : null;
+
+const error = Astro.url.searchParams.get("error");
+const authLoginUrl = appPath("auth/login");
+const authLogoutUrl = appPath("auth/logout");
+const apiMeUrl = appPath("api/me");
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Login — Woodland Properties</title>
+    <style>
+      .login {
+        max-width: 32rem;
+        margin: 4rem auto;
+        padding: 0 1.5rem;
+      }
+      .login__card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        background: #fff;
+      }
+      .login__title {
+        margin: 0 0 0.5rem;
+        font-size: 1.5rem;
+      }
+      .login__lead {
+        margin: 0 0 1.5rem;
+        color: #4b5563;
+      }
+      .login__error {
+        margin: 0 0 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        background: #fef2f2;
+        color: #991b1b;
+      }
+      .login__notice {
+        margin: 0 0 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        background: #fffbeb;
+        color: #92400e;
+      }
+      .login__user {
+        margin: 0 0 1rem;
+        font-weight: 600;
+      }
+      .login__meta {
+        margin: 0 0 1.5rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+      }
+      .login__actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+      }
+      .btn--primary {
+        background: #111827;
+        color: #fff;
+      }
+      .btn--secondary {
+        background: #f3f4f6;
+        color: #111827;
+      }
+    </style>
+  </head>
+  <body>
+    <SiteNav client:load />
+    <main class="login">
+      <div class="login__card">
+        <h1 class="login__title">Agent Portal</h1>
+        <p class="login__lead">
+          Sign in to update your agent profile. Woodland Properties staff can review
+          submitted changes in the admin change log.
+        </p>
+
+        {
+          !authReady && (
+            <p class="login__notice">
+              Auth0 is not configured yet. Add the variables in <code>.env.example</code>{" "}
+              to enable login locally.
+            </p>
+          )
+        }
+
+        {
+          error && (
+            <p class="login__error">
+              Sign-in failed ({error}). Please try again.
+            </p>
+          )
+        }
+
+        {
+          session ? (
+            <>
+              <p class="login__user">Signed in as {session.name ?? session.email ?? session.sub}</p>
+              <p class="login__meta" id="session-meta">
+                {session.roles?.length
+                  ? `Roles: ${session.roles.join(", ")}`
+                  : "No roles assigned yet (Phase 2)."}
+              </p>
+              <div class="login__actions">
+                <a class="btn btn--primary" href={authLogoutUrl}>Sign out</a>
+              </div>
+            </>
+          ) : authReady ? (
+            <div class="login__actions">
+              <a class="btn btn--primary" href={authLoginUrl}>Sign in with Auth0</a>
+            </div>
+          ) : null
+        }
+      </div>
+    </main>
+    <SiteFooter client:load />
+
+    <script define:vars={{ apiMeUrl }}>
+      // Confirms the httpOnly cookie works end-to-end via the protected API route.
+      fetch(apiMeUrl, { credentials: "include" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((user) => {
+          if (!user) return;
+          const meta = document.getElementById("session-meta");
+          if (meta && user.email) {
+            meta.textContent = `${meta.textContent ?? ""} · Verified via /api/me`;
+          }
+        })
+        .catch(() => {});
+    </script>
+  </body>
+</html>
