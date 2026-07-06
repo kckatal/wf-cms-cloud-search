@@ -15,6 +15,7 @@
     "postinstall": "node scripts/patch-cloudflare-for-webflow.mjs",
     "build:index": "node --env-file-if-exists=.env --import tsx ./scripts/build-index.ts",
     "auth0:import": "node --env-file-if-exists=.env --import tsx ./scripts/generate-auth0-import.ts",
+    "webflow:check-token": "node --env-file-if-exists=.env --import tsx ./scripts/check-webflow-token.ts",
     "astro": "astro"
   },
   "dependencies": {

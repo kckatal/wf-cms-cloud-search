@@ -26,6 +26,8 @@ export interface AgentProfileView extends AgentProfileForm {
   id: string;
   slug: string;
   name: string;
+  headshotUrl: string | null;
+  headshotAlt: string | null;
   areas: { id: string; name: string; slug: string }[];
   specialties: { id: string; name: string; slug: string }[];
 }
@@ -62,6 +64,8 @@ export function agentToProfileView(agent: {
   id: string;
   slug: string;
   name: string;
+  headshotUrl?: string | null;
+  headshotAlt?: string | null;
   phone: string | null;
   phoneLabel: string | null;
   streetAddress: string | null;
@@ -80,6 +84,8 @@ export function agentToProfileView(agent: {
     id: agent.id,
     slug: agent.slug,
     name: agent.name,
+    headshotUrl: agent.headshotUrl ?? null,
+    headshotAlt: agent.headshotAlt ?? null,
     phone: agent.phone,
     phoneLabel: agent.phoneLabel,
     streetAddress: agent.streetAddress,

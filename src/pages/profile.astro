@@ -8,6 +8,7 @@ import {
   isAuthConfigured,
 } from "../lib/auth";
 import { agentToProfileView } from "../lib/profile/fields";
+import { formatHeadshotMaxSize, HEADSHOT_ACCEPT, HEADSHOT_MAX_BYTES } from "../lib/profile/headshot";
 import { agentPublicProfileUrl } from "../lib/site-url";
 import { fetchAgentById, fetchTaxonomyOptions } from "../lib/webflow/agents";
 import "webflow/css/global.css";
@@ -17,6 +18,8 @@ export const prerender = false;
 
 const loginUrl = appPath("login");
 const profileApiUrl = appPath("api/agent/profile");
+const profileHeadshotApiUrl = appPath("api/agent/profile/headshot");
+const headshotMaxLabel = formatHeadshotMaxSize();
 
 const authReady = isAuthConfigured();
 const session = authReady
@@ -186,6 +189,37 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
       }
       .status--error { color: #991b1b; }
       .status--success { color: #166534; }
+      .headshot {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .headshot__preview {
+        width: 6.5rem;
+        height: 6.5rem;
+        border-radius: 9999px;
+        object-fit: cover;
+        border: 1px solid #e5e7eb;
+        background: #f3f4f6;
+      }
+      .headshot__preview--empty {
+        background: linear-gradient(135deg, #e5e7eb 0%, #f9fafb 100%);
+      }
+      .headshot__controls {
+        flex: 1;
+        min-width: 12rem;
+      }
+      .headshot__hint {
+        margin: 0.375rem 0 0;
+        color: #6b7280;
+        font-size: 0.8125rem;
+        line-height: 1.4;
+      }
+      .headshot__input {
+        font: inherit;
+        font-size: 0.875rem;
+      }
     </style>
   </head>
   <body>
@@ -201,6 +235,37 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
         </p>
 
         <form class="profile__grid" id="profile-form">
+          <div class="field">
+            <label class="field__label" for="headshot">Profile photo</label>
+            <div class="headshot">
+              {
+                profile.headshotUrl ? (
+                  <img
+                    class="headshot__preview"
+                    id="headshot-preview"
+                    src={profile.headshotUrl}
+                    alt={profile.headshotAlt ?? profile.name}
+                    width="104"
+                    height="104"
+                  />
+                ) : (
+                  <div class="headshot__preview headshot__preview--empty" id="headshot-preview" aria-hidden="true" />
+                )
+              }
+              <div class="headshot__controls">
+                <input
+                  class="headshot__input"
+                  id="headshot"
+                  name="headshot"
+                  type="file"
+                  accept={HEADSHOT_ACCEPT}
+                />
+                <p class="headshot__hint">
+                  JPEG, PNG, or WebP · max {headshotMaxLabel}. Uploads when you save.
+                </p>
+              </div>
+            </div>
+          </div>
           <div class="field">
             <label for="phone">Phone</label>
             <input id="phone" name="phone" type="tel" value={profile.phone ?? ""} />
@@ -311,9 +376,12 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
     </main>
     <SiteFooter client:load />
 
-    <script define:vars={{ profileApiUrl }}>
+    <script define:vars={{ profileApiUrl, profileHeadshotApiUrl, headshotMaxBytes: HEADSHOT_MAX_BYTES }}>
       const form = document.getElementById("profile-form");
       const status = document.getElementById("status");
+      const headshotInput = document.getElementById("headshot");
+      const headshotPreview = document.getElementById("headshot-preview");
+      let headshotPreviewUrl = null;
 
       function showStatus(message, type) {
         if (!status) return;
@@ -349,6 +417,33 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
         input.addEventListener("input", () => filterCheckList(input));
       });
 
+      headshotInput?.addEventListener("change", () => {
+        const file = headshotInput.files?.[0];
+        if (!file) return;
+
+        if (file.size > headshotMaxBytes) {
+          showStatus(`Photo must be ${Math.round(headshotMaxBytes / 1024)} KB or smaller.`, "error");
+          headshotInput.value = "";
+          return;
+        }
+
+        if (headshotPreviewUrl) URL.revokeObjectURL(headshotPreviewUrl);
+        headshotPreviewUrl = URL.createObjectURL(file);
+        if (headshotPreview instanceof HTMLImageElement) {
+          headshotPreview.src = headshotPreviewUrl;
+        } else if (headshotPreview instanceof HTMLElement) {
+          const img = document.createElement("img");
+          img.id = "headshot-preview";
+          img.className = "headshot__preview";
+          img.alt = "Selected profile photo preview";
+          img.width = 104;
+          img.height = 104;
+          img.src = headshotPreviewUrl;
+          headshotPreview.replaceWith(img);
+        }
+        status.hidden = true;
+      });
+
       form?.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!form) return;
@@ -380,6 +475,33 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
         showStatus("Saving…", "success");
 
         try {
+          const headshotFile = headshotInput?.files?.[0];
+          if (headshotFile) {
+            if (headshotFile.size > headshotMaxBytes) {
+              showStatus(`Photo must be ${Math.round(headshotMaxBytes / 1024)} KB or smaller.`, "error");
+              return;
+            }
+
+            const headshotData = new FormData();
+            headshotData.append("headshot", headshotFile);
+
+            const headshotRes = await fetch(profileHeadshotApiUrl, {
+              method: "POST",
+              credentials: "include",
+              body: headshotData,
+            });
+            const headshotJson = await headshotRes.json().catch(() => ({}));
+            if (!headshotRes.ok) {
+              showStatus(headshotJson.message ?? headshotJson.error ?? "Photo upload failed.", "error");
+              return;
+            }
+
+            if (headshotPreview instanceof HTMLImageElement && headshotJson.profile?.headshotUrl) {
+              headshotPreview.src = headshotJson.profile.headshotUrl;
+            }
+            headshotInput.value = "";
+          }
+
           const res = await fetch(profileApiUrl, {
             method: "PATCH",
             credentials: "include",

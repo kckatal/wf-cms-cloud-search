@@ -15,6 +15,7 @@ const FIELD_LABELS: Record<string, string> = {
   "website-url": "Website URL",
   "company-name": "Company name",
   "company-url": "Company URL",
+  headshot: "Profile photo",
   "areas-served": "Areas served",
   specialties: "Specialties",
 };
@@ -103,6 +104,17 @@ export function diffProfileChanges(
         before: idsToLabelList(before.specialtyIds, specialtyLookup),
         after: idsToLabelList(afterIds, specialtyLookup),
       });
+      continue;
+    }
+
+    if (cmsKey === "headshot") {
+      const after =
+        rawAfter && typeof rawAfter === "object" && "url" in rawAfter
+          ? displayValue(String((rawAfter as { url?: string }).url ?? ""))
+          : "(updated)";
+      const before = displayValue(before.headshotUrl);
+      if (before === after) continue;
+      changes.push({ field: cmsKey, label, before, after });
       continue;
     }
 
