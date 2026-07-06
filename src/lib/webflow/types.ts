@@ -58,7 +58,9 @@ export interface AgentFields {
   "website-url"?: string | null;
   "company-name"?: string | null;
   "company-url"?: string | null;
-  "partner-badge-text"?: string | null;
+  "first-name"?: string | null;
+  "last-name"?: string | null;
+  email?: string | null;
   "realtor-badge"?: boolean | null;
   "total-listings"?: number | null;
   "active-listings-count"?: number | null;
@@ -104,7 +106,9 @@ export interface Agent {
   websiteName: string | null;
   websiteUrl: string | null;
   companyUrl: string | null;
-  partnerBadgeText: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
   realtorBadge: boolean;
   totalListings: number | null;
   activeListingsCount: number | null;

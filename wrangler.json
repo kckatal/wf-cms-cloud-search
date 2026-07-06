@@ -9,5 +9,12 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "CHANGELOG_KV",
+      "id": "changelog-local-dev",
+      "preview_id": "changelog-local-dev"
+    }
+  ]
 }

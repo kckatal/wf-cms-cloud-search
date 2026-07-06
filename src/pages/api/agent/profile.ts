@@ -6,6 +6,7 @@
 import type { APIRoute } from "astro";
 
 import { jsonResponse, requireLinkedAgent, requireSession } from "../../../lib/auth/guard";
+import { appendChangelogEntry, diffProfileChanges } from "../../../lib/changelog";
 import { agentToProfileView, parseProfileUpdate } from "../../../lib/profile/fields";
 import { invalidateIndex } from "../../../lib/search";
 import {
@@ -61,10 +62,32 @@ export const PATCH: APIRoute = async ({ request }) => {
   }
 
   try {
+    const [beforeAgent, options] = await Promise.all([
+      fetchAgentById(agentId),
+      fetchTaxonomyOptions(),
+    ]);
+
+    if (!beforeAgent) {
+      return jsonResponse({ error: "Not found", message: "Agent CMS item not found." }, 404);
+    }
+
+    const beforeProfile = agentToProfileView(beforeAgent);
     const updated = await updateAgentProfile(agentId, fieldData);
     invalidateIndex();
 
-    const options = await fetchTaxonomyOptions();
+    const changes = diffProfileChanges(beforeProfile, fieldData, options);
+    if (changes.length > 0) {
+      await appendChangelogEntry({
+        agentId,
+        agentName: beforeProfile.name,
+        agentSlug: beforeProfile.slug,
+        userSub: session.sub,
+        userEmail: session.email ?? null,
+        userName: session.name ?? null,
+        changes,
+      });
+    }
+
     return jsonResponse({ profile: agentToProfileView(updated), options });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

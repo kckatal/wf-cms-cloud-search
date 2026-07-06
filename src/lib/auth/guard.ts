@@ -3,7 +3,7 @@
  */
 
 import type { AuthSession } from "./session";
-import { getSessionFromRequest, isAgent } from "./session";
+import { getSessionFromRequest, isAdmin, isAgent } from "./session";
 
 export function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -37,4 +37,11 @@ export function requireLinkedAgent(session: AuthSession): string | Response {
     );
   }
   return session.agentId;
+}
+
+export function requireAdmin(session: AuthSession): true | Response {
+  if (!isAdmin(session)) {
+    return jsonResponse({ error: "Forbidden", message: "Admin role required." }, 403);
+  }
+  return true;
 }

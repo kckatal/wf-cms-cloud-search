@@ -1,9 +1,10 @@
 ---
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
-import { getSessionFromRequest, isAgent, isAuthConfigured } from "../lib/auth";
+import { getSessionFromRequest, isAdmin, isAgent, isAuthConfigured } from "../lib/auth";
 import { appPath } from "../lib/app-path";
 import "webflow/css/global.css";
+import "../styles/site.css";
 
 export const prerender = false;
 
@@ -13,6 +14,13 @@ const session = authReady
   : null;
 
 const error = Astro.url.searchParams.get("error");
+const errorMessages: Record<string, string> = {
+  admin_required: "Admin access required.",
+  not_linked: "No agent profile is linked to this account.",
+  agent_not_found: "Linked agent profile was not found.",
+};
+
+const errorMessage = error ? (errorMessages[error] ?? `Sign-in failed (${error}). Please try again.`) : null;
 const authLoginUrl = appPath("auth/login");
 const authLogoutUrl = appPath("auth/logout");
 const apiMeUrl = appPath("api/me");
@@ -112,9 +120,9 @@ const apiMeUrl = appPath("api/me");
         }
 
         {
-          error && (
+          errorMessage && (
             <p class="login__error">
-              Sign-in failed ({error}). Please try again.
+              {errorMessage}
             </p>
           )
         }
@@ -131,6 +139,9 @@ const apiMeUrl = appPath("api/me");
               <div class="login__actions">
                 {isAgent(session) && session.agentId && (
                   <a class="btn btn--primary" href={appPath("profile")}>Edit profile</a>
+                )}
+                {isAdmin(session) && (
+                  <a class="btn btn--secondary" href={appPath("admin/changelog")}>Change log</a>
                 )}
                 <a class="btn btn--secondary" href={authLogoutUrl}>Sign out</a>
               </div>

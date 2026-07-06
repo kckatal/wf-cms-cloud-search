@@ -14,6 +14,7 @@
     "preview": "astro build && wrangler dev",
     "postinstall": "node scripts/patch-cloudflare-for-webflow.mjs",
     "build:index": "node --env-file-if-exists=.env --import tsx ./scripts/build-index.ts",
+    "auth0:import": "node --env-file-if-exists=.env --import tsx ./scripts/generate-auth0-import.ts",
     "astro": "astro"
   },
   "dependencies": {
@@ -31,6 +32,8 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "tsx": "^4.22.4",
+    "bcryptjs": "^3.0.2",
+    "@types/bcryptjs": "^2.4.6",
     "typescript": "^6.0.3",
     "wrangler": "^4.107.0"
   }

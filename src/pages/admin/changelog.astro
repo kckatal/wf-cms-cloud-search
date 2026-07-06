@@ -1,0 +1,207 @@
+---
+import SiteNav from "../../components/SiteNav";
+import SiteFooter from "../../components/SiteFooter";
+import { appPath } from "../../lib/app-path";
+import { getSessionFromRequest, isAdmin, isAuthConfigured } from "../../lib/auth";
+import { listChangelogEntries } from "../../lib/changelog";
+import { agentPublicProfileUrl } from "../../lib/site-url";
+import "webflow/css/global.css";
+import "../../styles/site.css";
+
+export const prerender = false;
+
+const loginUrl = appPath("login");
+
+const authReady = isAuthConfigured();
+const session = authReady
+  ? await getSessionFromRequest(Astro.request.headers.get("cookie"))
+  : null;
+
+if (!session) {
+  return Astro.redirect(loginUrl);
+}
+
+if (!isAdmin(session)) {
+  return Astro.redirect(`${loginUrl}?error=admin_required`);
+}
+
+const limit = 50;
+const { entries, total } = await listChangelogEntries({ limit, offset: 0 });
+
+function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Profile change log — Admin</title>
+    <style>
+      .changelog {
+        max-width: 56rem;
+        margin: 3rem auto 4rem;
+        padding: 0 1.5rem;
+      }
+      .changelog__card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        background: #fff;
+      }
+      .changelog__header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .changelog__title {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+      .changelog__meta {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.875rem;
+      }
+      .changelog__nav {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .changelog__nav a {
+        color: #2b6cb0;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+      }
+      .changelog__nav a:hover {
+        text-decoration: underline;
+      }
+      .changelog__empty {
+        margin: 0;
+        color: #6b7280;
+      }
+      .entry {
+        border-top: 1px solid #e5e7eb;
+        padding: 1.25rem 0;
+      }
+      .entry:first-of-type {
+        border-top: none;
+        padding-top: 0;
+      }
+      .entry__head {
+        margin: 0 0 0.75rem;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+      }
+      .entry__head strong {
+        font-weight: 600;
+      }
+      .entry__head a {
+        color: #2b6cb0;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .entry__head a:hover {
+        text-decoration: underline;
+      }
+      .entry__time {
+        color: #6b7280;
+        font-size: 0.8125rem;
+      }
+      .changes {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .change {
+        font-size: 0.875rem;
+        line-height: 1.45;
+        background: #f9fafb;
+        border-radius: 0.375rem;
+        padding: 0.625rem 0.75rem;
+      }
+      .change__label {
+        font-weight: 600;
+        color: #374151;
+      }
+      .change__values {
+        color: #4b5563;
+      }
+      .change__before {
+        text-decoration: line-through;
+        color: #9ca3af;
+      }
+      .change__arrow {
+        margin: 0 0.35rem;
+        color: #9ca3af;
+      }
+    </style>
+  </head>
+  <body>
+    <SiteNav client:load />
+    <main class="changelog">
+      <div class="changelog__card">
+        <div class="changelog__header">
+          <div>
+            <h1 class="changelog__title">Profile change log</h1>
+            <p class="changelog__meta">
+              {total === 0
+                ? "No edits recorded yet."
+                : `${total} edit${total === 1 ? "" : "s"} recorded · showing latest ${Math.min(limit, total)}`}
+            </p>
+          </div>
+          <nav class="changelog__nav" aria-label="Admin navigation">
+            <a href={loginUrl}>Back to login</a>
+            <a href={appPath("auth/logout")}>Sign out</a>
+          </nav>
+        </div>
+
+        {
+          entries.length === 0 ? (
+            <p class="changelog__empty">
+              When agents save profile changes, each field update will appear here with before and after values.
+            </p>
+          ) : (
+            entries.map((entry) => (
+              <article class="entry">
+                <p class="entry__head">
+                  <span class="entry__time">{formatTimestamp(entry.timestamp)}</span>
+                  {" · "}
+                  <strong>{entry.userName ?? entry.userEmail ?? entry.userSub}</strong>
+                  {" edited "}
+                  <a href={agentPublicProfileUrl(entry.agentSlug)} target="_blank" rel="noopener noreferrer">
+                    {entry.agentName}
+                  </a>
+                </p>
+                <ul class="changes">
+                  {entry.changes.map((change) => (
+                    <li class="change">
+                      <span class="change__label">{change.label}: </span>
+                      <span class="change__values">
+                        <span class="change__before">{change.before}</span>
+                        <span class="change__arrow" aria-hidden="true">→</span>
+                        {change.after}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))
+          )
+        }
+      </div>
+    </main>
+    <SiteFooter client:load />
+  </body>
+</html>

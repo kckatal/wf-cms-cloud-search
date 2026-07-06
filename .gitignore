@@ -4,6 +4,8 @@ dist/
 .astro/
 # generated search index
 src/data/agents-index.json
+# generated Auth0 bulk import (contains password hashes)
+auth0-import.json
 
 # dependencies
 node_modules/

@@ -1,0 +1,18 @@
+/**
+ * Shared typography for Cloud app pages (login, profile, search UI).
+ * Satoshi @font-face lives in webflow/css/fonts.css (via global.css).
+ */
+body {
+  margin: 0;
+  font-family: Satoshi, Arial, sans-serif;
+  color: #1d1b18;
+  line-height: 1.45;
+  background: #fff;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}

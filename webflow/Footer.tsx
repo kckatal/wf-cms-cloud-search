@@ -68,22 +68,22 @@ export function Footer({}: FooterProps) {
               >
                 {"Cookie Policy"}
               </Link>
+              <Link
+                button={false}
+                className={"footer-link"}
+                options={{
+                  href: "/find-an-agent/login",
+                  target: "_blank",
+                }}
+              >
+                {"Agent Portal"}
+              </Link>
             </Block>
             <Block
               className={"dark-footer-links-wrapper"}
               id={"w-node-_6b0c63c9-3272-2fab-d2e1-e6bc7e63dfa0-7e63df98"}
               tag={"div"}
             >
-              <Link
-                button={false}
-                className={"footer-link"}
-                options={{
-                  href: "https://www.zoyaqib.com/",
-                  target: "_blank",
-                }}
-              >
-                {"Created by Zoya Aqib"}
-              </Link>
               <Link
                 button={false}
                 className={"footer-link"}
