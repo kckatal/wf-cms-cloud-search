@@ -79,7 +79,7 @@ export function renderCard(agent: SearchResultItem): string {
       ${headshot}
       <div class="agent-card__body">
         <h3 class="agent-card__name">
-          <a href="#agent-${escapeHtml(agent.slug)}">${escapeHtml(agent.name)}</a>
+          <a href="/agents/${escapeHtml(agent.slug)}">${escapeHtml(agent.name)}</a>
           ${agent.realtorBadge ? REALTOR_BADGE : ""}
         </h3>
         ${company ? `<p class="agent-card__company">${escapeHtml(company)}</p>` : ""}

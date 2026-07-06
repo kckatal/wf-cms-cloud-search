@@ -51,6 +51,10 @@
     outline-width: 2px;
     color: hsla(214.6153846153846, 100%, 37%, 1);
   }
+  .navbar-brand {
+    font-weight: 700;
+    text-transform: uppercase;
+  }
   .container {
     width: 100%;
     max-width: none;

@@ -112,3 +112,65 @@ export async function fetchAgents(client: WebflowClient = new WebflowClient()): 
 
   return mapAgents(agentItems, areaItems, specialtyItems);
 }
+
+/** Fetch a single agent by CMS item ID with references resolved. */
+export async function fetchAgentById(
+  agentId: string,
+  client: WebflowClient = new WebflowClient(),
+): Promise<Agent | null> {
+  const { collections } = getConfig();
+
+  const [item, areaItems, specialtyItems] = await Promise.all([
+    client.getItem<AgentFields>(collections.agents, agentId),
+    client.listAllItems<TaxonomyFields>(collections.areas),
+    client.listAllItems<TaxonomyFields>(collections.specialties),
+  ]);
+
+  if (!item || item.isArchived) return null;
+  return mapAgents([item], areaItems, specialtyItems)[0] ?? null;
+}
+
+/** Update agent CMS fields and publish live. Requires cms:write token scope. */
+export async function updateAgentProfile(
+  agentId: string,
+  fieldData: Partial<AgentFields>,
+  client: WebflowClient = new WebflowClient(),
+): Promise<Agent> {
+  const { collections } = getConfig();
+
+  await client.updateItem(collections.agents, agentId, fieldData);
+  await client.publishItems(collections.agents, [agentId]);
+
+  const updated = await fetchAgentById(agentId, client);
+  if (!updated) {
+    throw new Error(`Agent ${agentId} not found after update.`);
+  }
+  return updated;
+}
+
+export interface TaxonomyOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export async function fetchTaxonomyOptions(
+  client: WebflowClient = new WebflowClient(),
+): Promise<{ areas: TaxonomyOption[]; specialties: TaxonomyOption[] }> {
+  const { collections } = getConfig();
+  const [areaItems, specialtyItems] = await Promise.all([
+    client.listAllItems<TaxonomyFields>(collections.areas),
+    client.listAllItems<TaxonomyFields>(collections.specialties),
+  ]);
+
+  const toOption = (item: RawCmsItem<TaxonomyFields>): TaxonomyOption => ({
+    id: item.id,
+    name: item.fieldData.name,
+    slug: item.fieldData.slug,
+  });
+
+  return {
+    areas: areaItems.map(toOption).sort((a, b) => a.name.localeCompare(b.name)),
+    specialties: specialtyItems.map(toOption).sort((a, b) => a.name.localeCompare(b.name)),
+  };
+}

@@ -1,7 +1,7 @@
 ---
 import SiteNav from "../components/SiteNav";
 import SiteFooter from "../components/SiteFooter";
-import { getSessionFromRequest, isAuthConfigured } from "../lib/auth";
+import { getSessionFromRequest, isAgent, isAuthConfigured } from "../lib/auth";
 import { appPath } from "../lib/app-path";
 import "webflow/css/global.css";
 
@@ -129,7 +129,10 @@ const apiMeUrl = appPath("api/me");
                   : "No roles assigned yet (Phase 2)."}
               </p>
               <div class="login__actions">
-                <a class="btn btn--primary" href={authLogoutUrl}>Sign out</a>
+                {isAgent(session) && session.agentId && (
+                  <a class="btn btn--primary" href={appPath("profile")}>Edit profile</a>
+                )}
+                <a class="btn btn--secondary" href={authLogoutUrl}>Sign out</a>
               </div>
             </>
           ) : authReady ? (

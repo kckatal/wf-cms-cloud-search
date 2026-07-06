@@ -1,0 +1,300 @@
+---
+import SiteNav from "../components/SiteNav";
+import SiteFooter from "../components/SiteFooter";
+import { appPath } from "../lib/app-path";
+import {
+  getSessionFromRequest,
+  isAgent,
+  isAuthConfigured,
+} from "../lib/auth";
+import { agentToProfileView } from "../lib/profile/fields";
+import { fetchAgentById, fetchTaxonomyOptions } from "../lib/webflow/agents";
+import "webflow/css/global.css";
+
+export const prerender = false;
+
+const loginUrl = appPath("login");
+const profileApiUrl = appPath("api/agent/profile");
+
+const authReady = isAuthConfigured();
+const session = authReady
+  ? await getSessionFromRequest(Astro.request.headers.get("cookie"))
+  : null;
+
+if (!session) {
+  return Astro.redirect(loginUrl);
+}
+
+if (!isAgent(session) || !session.agentId) {
+  return Astro.redirect(`${loginUrl}?error=not_linked`);
+}
+
+const agent = await fetchAgentById(session.agentId);
+const options = await fetchTaxonomyOptions();
+
+if (!agent) {
+  return Astro.redirect(`${loginUrl}?error=agent_not_found`);
+}
+
+const profile = agentToProfileView(agent);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edit profile — {profile.name}</title>
+    <style>
+      .profile {
+        max-width: 40rem;
+        margin: 3rem auto 4rem;
+        padding: 0 1.5rem;
+      }
+      .profile__card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        background: #fff;
+      }
+      .profile__title {
+        margin: 0 0 0.25rem;
+        font-size: 1.5rem;
+      }
+      .profile__sub {
+        margin: 0 0 1.5rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+      }
+      .profile__grid {
+        display: grid;
+        gap: 1rem;
+      }
+      .field label {
+        display: block;
+        margin-bottom: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+      .field input,
+      .field textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.625rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font: inherit;
+      }
+      .field textarea {
+        min-height: 7rem;
+        resize: vertical;
+      }
+      .checks {
+        display: grid;
+        gap: 0.5rem;
+        max-height: 12rem;
+        overflow: auto;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+      }
+      .checks label {
+        display: flex;
+        gap: 0.5rem;
+        font-weight: 400;
+        font-size: 0.875rem;
+      }
+      .profile__actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font: inherit;
+      }
+      .btn--primary {
+        background: #111827;
+        color: #fff;
+      }
+      .btn--secondary {
+        background: #f3f4f6;
+        color: #111827;
+      }
+      .status {
+        margin-top: 1rem;
+        font-size: 0.875rem;
+      }
+      .status--error { color: #991b1b; }
+      .status--success { color: #166534; }
+    </style>
+  </head>
+  <body>
+    <SiteNav client:load />
+    <main class="profile">
+      <div class="profile__card">
+        <h1 class="profile__title">Edit your profile</h1>
+        <p class="profile__sub">{profile.name} · changes publish to the live site</p>
+
+        <form class="profile__grid" id="profile-form">
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" value={profile.phone ?? ""} />
+          </div>
+          <div class="field">
+            <label for="phoneLabel">Phone label</label>
+            <input id="phoneLabel" name="phoneLabel" type="text" value={profile.phoneLabel ?? ""} />
+          </div>
+          <div class="field">
+            <label for="brokerageName">Brokerage</label>
+            <input id="brokerageName" name="brokerageName" type="text" value={profile.brokerageName ?? ""} />
+          </div>
+          <div class="field">
+            <label for="licenseNumber">License number</label>
+            <input id="licenseNumber" name="licenseNumber" type="text" value={profile.licenseNumber ?? ""} />
+          </div>
+          <div class="field">
+            <label for="streetAddress">Street address</label>
+            <input id="streetAddress" name="streetAddress" type="text" value={profile.streetAddress ?? ""} />
+          </div>
+          <div class="field">
+            <label for="cityStateZip">City, state, zip</label>
+            <input id="cityStateZip" name="cityStateZip" type="text" value={profile.cityStateZip ?? ""} />
+          </div>
+          <div class="field">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio">{profile.bio ?? ""}</textarea>
+          </div>
+          <div class="field">
+            <label for="websiteName">Website name</label>
+            <input id="websiteName" name="websiteName" type="text" value={profile.websiteName ?? ""} />
+          </div>
+          <div class="field">
+            <label for="websiteUrl">Website URL</label>
+            <input id="websiteUrl" name="websiteUrl" type="url" value={profile.websiteUrl ?? ""} />
+          </div>
+          <div class="field">
+            <label for="companyName">Company name</label>
+            <input id="companyName" name="companyName" type="text" value={profile.companyName ?? ""} />
+          </div>
+          <div class="field">
+            <label for="companyUrl">Company URL</label>
+            <input id="companyUrl" name="companyUrl" type="url" value={profile.companyUrl ?? ""} />
+          </div>
+          <div class="field">
+            <label>Areas served</label>
+            <div class="checks">
+              {
+                options.areas.map((area) => (
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="areaIds"
+                      value={area.id}
+                      checked={profile.areaIds.includes(area.id)}
+                    />
+                    {area.name}
+                  </label>
+                ))
+              }
+            </div>
+          </div>
+          <div class="field">
+            <label>Specialties</label>
+            <div class="checks">
+              {
+                options.specialties.map((specialty) => (
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="specialtyIds"
+                      value={specialty.id}
+                      checked={profile.specialtyIds.includes(specialty.id)}
+                    />
+                    {specialty.name}
+                  </label>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class="profile__actions">
+            <button class="btn btn--primary" type="submit">Save changes</button>
+            <a class="btn btn--secondary" href={loginUrl}>Back to portal</a>
+          </div>
+        </form>
+
+        <p class="status" id="status" hidden></p>
+      </div>
+    </main>
+    <SiteFooter client:load />
+
+    <script define:vars={{ profileApiUrl }}>
+      const form = document.getElementById("profile-form");
+      const status = document.getElementById("status");
+
+      function showStatus(message, type) {
+        if (!status) return;
+        status.hidden = false;
+        status.textContent = message;
+        status.className = `status status--${type}`;
+      }
+
+      form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!form) return;
+
+        const data = new FormData(form);
+        const areaIds = [...form.querySelectorAll('input[name="areaIds"]:checked')].map(
+          (el) => el.value,
+        );
+        const specialtyIds = [...form.querySelectorAll('input[name="specialtyIds"]:checked')].map(
+          (el) => el.value,
+        );
+
+        const payload = {
+          phone: data.get("phone"),
+          phoneLabel: data.get("phoneLabel"),
+          brokerageName: data.get("brokerageName"),
+          licenseNumber: data.get("licenseNumber"),
+          streetAddress: data.get("streetAddress"),
+          cityStateZip: data.get("cityStateZip"),
+          bio: data.get("bio"),
+          websiteName: data.get("websiteName"),
+          websiteUrl: data.get("websiteUrl"),
+          companyName: data.get("companyName"),
+          companyUrl: data.get("companyUrl"),
+          areaIds,
+          specialtyIds,
+        };
+
+        showStatus("Saving…", "success");
+
+        try {
+          const res = await fetch(profileApiUrl, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showStatus(json.message ?? json.error ?? "Save failed.", "error");
+            return;
+          }
+          showStatus("Profile saved and published.", "success");
+        } catch {
+          showStatus("Network error. Please try again.", "error");
+        }
+      });
+    </script>
+  </body>
+</html>

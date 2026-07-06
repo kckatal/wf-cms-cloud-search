@@ -15,11 +15,14 @@ export class WebflowClient {
     this.config = config;
   }
 
-  private async request<T>(path: string): Promise<T> {
+  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const res = await fetch(`${WEBFLOW_API_BASE}${path}`, {
+      ...init,
       headers: {
         Authorization: `Bearer ${this.config.apiToken}`,
         accept: "application/json",
+        ...(init.body ? { "content-type": "application/json" } : {}),
+        ...init.headers,
       },
     });
 
@@ -28,7 +31,41 @@ export class WebflowClient {
       throw new Error(`Webflow API ${res.status} ${res.statusText} for ${path}: ${body}`);
     }
 
+    if (res.status === 204) return undefined as T;
     return res.json() as Promise<T>;
+  }
+
+  async getItem<TFields = Record<string, unknown>>(
+    collectionId: string,
+    itemId: string,
+  ): Promise<RawCmsItem<TFields> | null> {
+    try {
+      return await this.request<RawCmsItem<TFields>>(
+        `/collections/${collectionId}/items/${itemId}`,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      if (message.includes("404")) return null;
+      throw err;
+    }
+  }
+
+  async updateItem<TFields = Record<string, unknown>>(
+    collectionId: string,
+    itemId: string,
+    fieldData: Record<string, unknown>,
+  ): Promise<RawCmsItem<TFields>> {
+    return this.request<RawCmsItem<TFields>>(`/collections/${collectionId}/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ fieldData }),
+    });
+  }
+
+  async publishItems(collectionId: string, itemIds: string[]): Promise<void> {
+    await this.request(`/collections/${collectionId}/items/publish`, {
+      method: "POST",
+      body: JSON.stringify({ itemIds }),
+    });
   }
 
   /**
