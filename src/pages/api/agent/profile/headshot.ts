@@ -1,17 +1,16 @@
 /**
  * POST /api/agent/profile/headshot — upload and publish a new profile photo.
- * multipart/form-data field: `headshot` (JPEG, PNG, or WebP, max 300 KB).
+ * Prefer PATCH /api/agent/profile with multipart (headshot + fields in one request).
  */
 
 import type { APIRoute } from "astro";
 
 import { jsonResponse, requireLinkedAgent, requireSession } from "../../../../lib/auth/guard";
-import { appendChangelogEntry } from "../../../../lib/changelog";
-import { validateHeadshotFile } from "../../../../lib/profile/headshot";
-import { agentToProfileView } from "../../../../lib/profile/fields";
-import { invalidateIndex } from "../../../../lib/search";
-import { uploadSiteAsset } from "../../../../lib/webflow/assets";
-import { fetchAgentById, fetchTaxonomyOptions, updateAgentProfile } from "../../../../lib/webflow/agents";
+import {
+  applyAgentProfileUpdate,
+  buildHeadshotFieldData,
+  ProfileUpdateError,
+} from "../../../../lib/profile/update";
 
 export const prerender = false;
 export const config = { runtime: "edge" };
@@ -31,56 +30,18 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const file = formData.get("headshot");
-  if (!(file instanceof File)) {
+  if (!(file instanceof File) || file.size === 0) {
     return jsonResponse({ error: "Missing headshot file" }, 400);
   }
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const validation = validateHeadshotFile(bytes, file.type || "application/octet-stream");
-  if (!validation.ok) {
-    return jsonResponse({ error: "invalid_headshot", message: validation.message }, 400);
-  }
-
   try {
-    const beforeAgent = await fetchAgentById(agentId);
-    if (!beforeAgent) {
-      return jsonResponse({ error: "Not found", message: "Agent CMS item not found." }, 404);
-    }
-
-    const beforeProfile = agentToProfileView(beforeAgent);
-    const fileName = `${beforeAgent.slug}-headshot${validation.extension}`;
-
-    const headshot = await uploadSiteAsset(bytes, fileName, validation.contentType);
-    headshot.alt = beforeAgent.name;
-
-    const updated = await updateAgentProfile(agentId, { headshot });
-    invalidateIndex();
-
-    const beforeUrl = beforeProfile.headshotUrl ?? "(none)";
-    const afterUrl = headshot.url;
-
-    if (beforeUrl !== afterUrl) {
-      await appendChangelogEntry({
-        agentId,
-        agentName: beforeProfile.name,
-        agentSlug: beforeProfile.slug,
-        userSub: session.sub,
-        userEmail: session.email ?? null,
-        userName: session.name ?? null,
-        changes: [
-          {
-            field: "headshot",
-            label: "Profile photo",
-            before: beforeUrl,
-            after: afterUrl,
-          },
-        ],
-      });
-    }
-
-    const options = await fetchTaxonomyOptions();
-    return jsonResponse({ profile: agentToProfileView(updated), options });
+    const fieldData = await buildHeadshotFieldData(agentId, file);
+    const result = await applyAgentProfileUpdate({ agentId, session, fieldData });
+    return jsonResponse(result);
   } catch (err) {
+    if (err instanceof ProfileUpdateError) {
+      return jsonResponse({ error: err.code, message: err.message }, err.status);
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     return jsonResponse({ error: "headshot_upload_failed", message }, 500);
   }

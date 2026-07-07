@@ -1,22 +1,55 @@
 /**
  * GET  /api/agent/profile — load the authenticated agent's editable profile.
- * PATCH /api/agent/profile — update the authenticated agent's CMS item.
+ * PATCH /api/agent/profile — update fields and/or headshot (JSON or multipart).
  */
 
 import type { APIRoute } from "astro";
 
 import { jsonResponse, requireLinkedAgent, requireSession } from "../../../lib/auth/guard";
-import { appendChangelogEntry, diffProfileChanges } from "../../../lib/changelog";
-import { agentToProfileView, parseProfileUpdate } from "../../../lib/profile/fields";
-import { invalidateIndex } from "../../../lib/search";
 import {
-  fetchAgentById,
-  fetchTaxonomyOptions,
-  updateAgentProfile,
-} from "../../../lib/webflow/agents";
+  agentToProfileView,
+  parseProfileUpdate,
+  parseProfileUpdateFromFormData,
+} from "../../../lib/profile/fields";
+import {
+  applyAgentProfileUpdate,
+  buildHeadshotFieldData,
+  ProfileUpdateError,
+} from "../../../lib/profile/update";
+import { fetchAgentById, fetchTaxonomyOptions } from "../../../lib/webflow/agents";
+import type { AgentFields } from "../../../lib/webflow/types";
 
 export const prerender = false;
 export const config = { runtime: "edge" };
+
+async function parsePatchBody(
+  request: Request,
+): Promise<{ fieldData: Partial<AgentFields>; headshotFile: File | null } | null> {
+  const contentType = request.headers.get("content-type") ?? "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+    const fieldData = parseProfileUpdateFromFormData(formData) ?? {};
+
+    const headshot = formData.get("headshot");
+    const headshotFile =
+      headshot instanceof File && headshot.size > 0 ? headshot : null;
+
+    if (Object.keys(fieldData).length === 0 && !headshotFile) return null;
+    return { fieldData, headshotFile };
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return null;
+  }
+
+  const fieldData = parseProfileUpdate(body);
+  if (!fieldData) return null;
+  return { fieldData, headshotFile: null };
+}
 
 export const GET: APIRoute = async ({ request }) => {
   const session = await requireSession(request);
@@ -49,47 +82,30 @@ export const PATCH: APIRoute = async ({ request }) => {
   const agentId = requireLinkedAgent(session);
   if (agentId instanceof Response) return agentId;
 
-  let body: unknown;
+  let parsed: { fieldData: Partial<AgentFields>; headshotFile: File | null } | null;
   try {
-    body = await request.json();
+    parsed = await parsePatchBody(request);
   } catch {
-    return jsonResponse({ error: "Invalid JSON body" }, 400);
+    return jsonResponse({ error: "Invalid request body" }, 400);
   }
 
-  const fieldData = parseProfileUpdate(body);
-  if (!fieldData) {
+  if (!parsed) {
     return jsonResponse({ error: "Invalid body", message: "No valid fields to update." }, 400);
   }
 
   try {
-    const [beforeAgent, options] = await Promise.all([
-      fetchAgentById(agentId),
-      fetchTaxonomyOptions(),
-    ]);
+    const fieldData = { ...parsed.fieldData };
 
-    if (!beforeAgent) {
-      return jsonResponse({ error: "Not found", message: "Agent CMS item not found." }, 404);
+    if (parsed.headshotFile) {
+      Object.assign(fieldData, await buildHeadshotFieldData(agentId, parsed.headshotFile));
     }
 
-    const beforeProfile = agentToProfileView(beforeAgent);
-    const updated = await updateAgentProfile(agentId, fieldData);
-    invalidateIndex();
-
-    const changes = diffProfileChanges(beforeProfile, fieldData, options);
-    if (changes.length > 0) {
-      await appendChangelogEntry({
-        agentId,
-        agentName: beforeProfile.name,
-        agentSlug: beforeProfile.slug,
-        userSub: session.sub,
-        userEmail: session.email ?? null,
-        userName: session.name ?? null,
-        changes,
-      });
-    }
-
-    return jsonResponse({ profile: agentToProfileView(updated), options });
+    const result = await applyAgentProfileUpdate({ agentId, session, fieldData });
+    return jsonResponse(result);
   } catch (err) {
+    if (err instanceof ProfileUpdateError) {
+      return jsonResponse({ error: err.code, message: err.message }, err.status);
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     return jsonResponse({ error: "profile_update_failed", message }, 500);
   }

@@ -22,7 +22,7 @@ export interface WebflowConfig {
   };
 }
 
-/** Defaults for the Woodland Properties site (see README). */
+/** Defaults for the Anderson Group Webflow site (see README). */
 const DEFAULTS = {
   siteId: "6a3ee562ea51d6c9ddc156c7",
   collections: {

@@ -18,7 +18,6 @@ export const prerender = false;
 
 const loginUrl = appPath("login");
 const profileApiUrl = appPath("api/agent/profile");
-const profileHeadshotApiUrl = appPath("api/agent/profile/headshot");
 const headshotMaxLabel = formatHeadshotMaxSize();
 
 const authReady = isAuthConfigured();
@@ -376,7 +375,7 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
     </main>
     <SiteFooter client:load />
 
-    <script define:vars={{ profileApiUrl, profileHeadshotApiUrl, headshotMaxBytes: HEADSHOT_MAX_BYTES }}>
+    <script define:vars={{ profileApiUrl, headshotMaxBytes: HEADSHOT_MAX_BYTES }}>
       const form = document.getElementById("profile-form");
       const status = document.getElementById("status");
       const headshotInput = document.getElementById("headshot");
@@ -448,71 +447,43 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
         event.preventDefault();
         if (!form) return;
 
-        const data = new FormData(form);
-        const areaIds = [...form.querySelectorAll('input[name="areaIds"]:checked')].map(
-          (el) => el.value,
-        );
-        const specialtyIds = [...form.querySelectorAll('input[name="specialtyIds"]:checked')].map(
-          (el) => el.value,
-        );
+        const headshotFile = headshotInput?.files?.[0];
+        if (headshotFile && headshotFile.size > headshotMaxBytes) {
+          showStatus(`Photo must be ${Math.round(headshotMaxBytes / 1024)} KB or smaller.`, "error");
+          return;
+        }
 
-        const payload = {
-          phone: data.get("phone"),
-          phoneLabel: data.get("phoneLabel"),
-          brokerageName: data.get("brokerageName"),
-          licenseNumber: data.get("licenseNumber"),
-          streetAddress: data.get("streetAddress"),
-          cityStateZip: data.get("cityStateZip"),
-          bio: data.get("bio"),
-          websiteName: data.get("websiteName"),
-          websiteUrl: data.get("websiteUrl"),
-          companyName: data.get("companyName"),
-          companyUrl: data.get("companyUrl"),
-          areaIds,
-          specialtyIds,
-        };
+        const submitData = new FormData(form);
+        submitData.delete("areaIds");
+        submitData.delete("specialtyIds");
+        for (const el of form.querySelectorAll('input[name="areaIds"]:checked')) {
+          submitData.append("areaIds", el.value);
+        }
+        for (const el of form.querySelectorAll('input[name="specialtyIds"]:checked')) {
+          submitData.append("specialtyIds", el.value);
+        }
+        if (headshotFile) {
+          submitData.set("headshot", headshotFile);
+        }
 
         showStatus("Saving…", "success");
 
         try {
-          const headshotFile = headshotInput?.files?.[0];
-          if (headshotFile) {
-            if (headshotFile.size > headshotMaxBytes) {
-              showStatus(`Photo must be ${Math.round(headshotMaxBytes / 1024)} KB or smaller.`, "error");
-              return;
-            }
-
-            const headshotData = new FormData();
-            headshotData.append("headshot", headshotFile);
-
-            const headshotRes = await fetch(profileHeadshotApiUrl, {
-              method: "POST",
-              credentials: "include",
-              body: headshotData,
-            });
-            const headshotJson = await headshotRes.json().catch(() => ({}));
-            if (!headshotRes.ok) {
-              showStatus(headshotJson.message ?? headshotJson.error ?? "Photo upload failed.", "error");
-              return;
-            }
-
-            if (headshotPreview instanceof HTMLImageElement && headshotJson.profile?.headshotUrl) {
-              headshotPreview.src = headshotJson.profile.headshotUrl;
-            }
-            headshotInput.value = "";
-          }
-
           const res = await fetch(profileApiUrl, {
             method: "PATCH",
             credentials: "include",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(payload),
+            body: submitData,
           });
           const json = await res.json().catch(() => ({}));
           if (!res.ok) {
             showStatus(json.message ?? json.error ?? "Save failed.", "error");
             return;
           }
+
+          if (headshotPreview instanceof HTMLImageElement && json.profile?.headshotUrl) {
+            headshotPreview.src = json.profile.headshotUrl;
+          }
+          if (headshotInput) headshotInput.value = "";
           showStatus("Profile saved and published.", "success");
         } catch {
           showStatus("Network error. Please try again.", "error");

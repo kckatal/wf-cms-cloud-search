@@ -128,12 +128,28 @@ export function parseProfileUpdate(body: unknown): Partial<AgentFields> | null {
   }
 
   const areaIds = normalizeIdList(input.areaIds);
-  if (areaIds) fieldData["areas-served"] = areaIds;
+  if (areaIds !== undefined) fieldData["areas-served"] = areaIds;
 
   const specialtyIds = normalizeIdList(input.specialtyIds);
-  if (specialtyIds) fieldData.specialties = specialtyIds;
+  if (specialtyIds !== undefined) fieldData.specialties = specialtyIds;
 
   return Object.keys(fieldData).length > 0 ? fieldData : null;
+}
+
+/** Parse profile fields from a multipart form (same shape as the profile editor). */
+export function parseProfileUpdateFromFormData(formData: FormData): Partial<AgentFields> | null {
+  const input: Record<string, unknown> = {};
+
+  for (const key of Object.keys(CMS_FIELD_MAP) as (keyof typeof CMS_FIELD_MAP)[]) {
+    const value = formData.get(key);
+    if (value != null) input[key] = value;
+  }
+
+  // Always include taxonomy selections (empty array clears all refs).
+  input.areaIds = formData.getAll("areaIds").map(String);
+  input.specialtyIds = formData.getAll("specialtyIds").map(String);
+
+  return parseProfileUpdate(input);
 }
 
 function escapeHtml(text: string): string {

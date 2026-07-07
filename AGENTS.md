@@ -21,7 +21,7 @@ Consult these guides before working on related tasks:
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
 
-# Woodland Properties — Agent Search & Filter
+# Anderson Group — Agent Search & Filter
 
 ## What this is
 
