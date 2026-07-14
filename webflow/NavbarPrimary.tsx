@@ -63,7 +63,7 @@ export function NavbarPrimary({}: NavbarPrimaryProps) {
               <NavbarBrand
                 className={"navbar-brand"}
                 options={{
-                  href: "#",
+                  href: "/",
                 }}
               >
                 <Block tag={"div"}>{"Anderson Group Real Estate"}</Block>
