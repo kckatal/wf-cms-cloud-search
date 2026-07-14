@@ -100,22 +100,25 @@ export function mapAgents(
 }
 
 /**
- * Fetch all agents with their references resolved. Agents, areas, and
- * specialties are loaded in parallel, then joined in memory by {@link mapAgents}.
+ * Fetch all published agents with references resolved (Content Delivery API).
+ * Used by the search index builder.
  */
 export async function fetchAgents(client: WebflowClient = new WebflowClient()): Promise<Agent[]> {
   const { collections } = getConfig();
 
   const [agentItems, areaItems, specialtyItems] = await Promise.all([
-    client.listAllItems<AgentFields>(collections.agents),
-    client.listAllItems<TaxonomyFields>(collections.areas),
-    client.listAllItems<TaxonomyFields>(collections.specialties),
+    client.listAllLiveItems<AgentFields>(collections.agents),
+    client.listAllLiveItems<TaxonomyFields>(collections.areas),
+    client.listAllLiveItems<TaxonomyFields>(collections.specialties),
   ]);
 
   return mapAgents(agentItems, areaItems, specialtyItems);
 }
 
-/** Fetch a single agent by CMS item ID with references resolved. */
+/**
+ * Fetch a single agent by CMS item ID via the Data API (fresh for profile editing).
+ * Taxonomy options for multi-refs are also loaded from the Data API.
+ */
 export async function fetchAgentById(
   agentId: string,
   client: WebflowClient = new WebflowClient(),
@@ -124,8 +127,8 @@ export async function fetchAgentById(
 
   const [item, areaItems, specialtyItems] = await Promise.all([
     client.getItem<AgentFields>(collections.agents, agentId),
-    client.listAllItems<TaxonomyFields>(collections.areas),
-    client.listAllItems<TaxonomyFields>(collections.specialties),
+    client.listAllLiveItems<TaxonomyFields>(collections.areas),
+    client.listAllLiveItems<TaxonomyFields>(collections.specialties),
   ]);
 
   if (!item || item.isArchived) return null;
@@ -156,13 +159,14 @@ export interface TaxonomyOption {
   slug: string;
 }
 
+/** Taxonomy options for the profile editor (CDN live items — published only). */
 export async function fetchTaxonomyOptions(
   client: WebflowClient = new WebflowClient(),
 ): Promise<{ areas: TaxonomyOption[]; specialties: TaxonomyOption[] }> {
   const { collections } = getConfig();
   const [areaItems, specialtyItems] = await Promise.all([
-    client.listAllItems<TaxonomyFields>(collections.areas),
-    client.listAllItems<TaxonomyFields>(collections.specialties),
+    client.listAllLiveItems<TaxonomyFields>(collections.areas),
+    client.listAllLiveItems<TaxonomyFields>(collections.specialties),
   ]);
 
   const toOption = (item: RawCmsItem<TaxonomyFields>): TaxonomyOption => ({

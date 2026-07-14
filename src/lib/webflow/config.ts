@@ -11,6 +11,8 @@ import { readEnv } from "../env";
 export { readEnv };
 
 export const WEBFLOW_API_BASE = "https://api.webflow.com/v2";
+/** CDN host for published CMS reads (search index). */
+export const WEBFLOW_CDN_API_BASE = "https://api-cdn.webflow.com/v2";
 
 export interface WebflowConfig {
   apiToken: string;
