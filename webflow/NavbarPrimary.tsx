@@ -140,6 +140,17 @@ export function NavbarPrimary({}: NavbarPrimaryProps) {
                       {"Contact"}
                     </Link>
                   </ListItem>
+                  <ListItem>
+                    <Link
+                      button={true}
+                      className={"primary-button is-nav"}
+                      options={{
+                        href: "/find-an-agent",
+                      }}
+                    >
+                      {"Find an Agent"}
+                    </Link>
+                  </ListItem>
                 </List>
               </NavbarMenu>
               <NavbarButton className={"menu-button"} tag={"div"}>

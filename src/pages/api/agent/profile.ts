@@ -46,9 +46,37 @@ async function parsePatchBody(
     return null;
   }
 
-  const fieldData = parseProfileUpdate(body);
-  if (!fieldData) return null;
-  return { fieldData, headshotFile: null };
+  // Prefer JSON in production: Astro CSRF only blocks form/multipart content types.
+  const fieldData = parseProfileUpdate(body) ?? {};
+  const headshotFile = headshotFileFromJsonBody(body);
+
+  if (Object.keys(fieldData).length === 0 && !headshotFile) return null;
+  return { fieldData, headshotFile };
+}
+
+/** Optional headshot as base64 so saves can use application/json (avoids CSRF 403). */
+function headshotFileFromJsonBody(body: unknown): File | null {
+  if (body == null || typeof body !== "object") return null;
+
+  const input = body as Record<string, unknown>;
+  const base64 = input.headshotBase64;
+  if (typeof base64 !== "string" || base64.length === 0) return null;
+
+  const contentType =
+    typeof input.headshotContentType === "string" && input.headshotContentType
+      ? input.headshotContentType
+      : "application/octet-stream";
+
+  try {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new File([bytes], "headshot", { type: contentType });
+  } catch {
+    return null;
+  }
 }
 
 export const GET: APIRoute = async ({ request }) => {

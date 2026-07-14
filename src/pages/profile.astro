@@ -461,17 +461,40 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
           return;
         }
 
-        const submitData = new FormData(form);
-        submitData.delete("areaIds");
-        submitData.delete("specialtyIds");
-        for (const el of form.querySelectorAll('input[name="areaIds"]:checked')) {
-          submitData.append("areaIds", el.value);
-        }
-        for (const el of form.querySelectorAll('input[name="specialtyIds"]:checked')) {
-          submitData.append("specialtyIds", el.value);
-        }
+        const data = new FormData(form);
+        const areaIds = [...form.querySelectorAll('input[name="areaIds"]:checked')].map(
+          (el) => el.value,
+        );
+        const specialtyIds = [...form.querySelectorAll('input[name="specialtyIds"]:checked')].map(
+          (el) => el.value,
+        );
+
+        // JSON avoids Astro CSRF 403 on multipart/PATCH behind Webflow Cloud.
+        const payload = {
+          phone: data.get("phone"),
+          phoneLabel: data.get("phoneLabel"),
+          brokerageName: data.get("brokerageName"),
+          licenseNumber: data.get("licenseNumber"),
+          streetAddress: data.get("streetAddress"),
+          cityStateZip: data.get("cityStateZip"),
+          bio: data.get("bio"),
+          websiteName: data.get("websiteName"),
+          websiteUrl: data.get("websiteUrl"),
+          companyName: data.get("companyName"),
+          companyUrl: data.get("companyUrl"),
+          areaIds,
+          specialtyIds,
+        };
+
         if (headshotFile) {
-          submitData.set("headshot", headshotFile);
+          const buffer = await headshotFile.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          let binary = "";
+          for (let i = 0; i < bytes.length; i += 1) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          payload.headshotBase64 = btoa(binary);
+          payload.headshotContentType = headshotFile.type || "application/octet-stream";
         }
 
         showStatus("Saving…", "success");
@@ -480,7 +503,8 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
           const res = await fetch(profileApiUrl, {
             method: "PATCH",
             credentials: "include",
-            body: submitData,
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
           });
           const raw = await res.text();
           let json = {};

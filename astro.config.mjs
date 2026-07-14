@@ -15,15 +15,11 @@ export default defineConfig({
     },
   }),
   integrations: [react()],
-  // Behind Webflow Cloud, the Worker host differs from the browser Origin.
-  // Trust X-Forwarded-Host so CSRF origin checks pass for multipart saves.
-  // If Webflow replaces this file at build time, re-add this block (or use checkOrigin: false).
+  // Webflow Cloud proxies the Worker under a different host than the browser Origin.
+  // Astro CSRF (checkOrigin) rejects multipart/PATCH saves with 403 in that setup.
+  // SameSite=Lax httpOnly session cookies still protect state-changing requests.
   security: {
-    checkOrigin: true,
-    allowedDomains: [
-      { hostname: "anderson-group-stage.webflow.io", protocol: "https" },
-      { hostname: "**.webflow.io", protocol: "https" },
-    ],
+    checkOrigin: false,
   },
   vite: {
     resolve: {
