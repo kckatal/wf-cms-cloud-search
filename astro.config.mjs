@@ -15,6 +15,16 @@ export default defineConfig({
     },
   }),
   integrations: [react()],
+  // Behind Webflow Cloud, the Worker host differs from the browser Origin.
+  // Trust X-Forwarded-Host so CSRF origin checks pass for multipart saves.
+  // If Webflow replaces this file at build time, re-add this block (or use checkOrigin: false).
+  security: {
+    checkOrigin: true,
+    allowedDomains: [
+      { hostname: "anderson-group-stage.webflow.io", protocol: "https" },
+      { hostname: "**.webflow.io", protocol: "https" },
+    ],
+  },
   vite: {
     resolve: {
       alias: import.meta.env.PROD

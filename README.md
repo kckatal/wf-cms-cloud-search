@@ -9,12 +9,16 @@ The default configuration targets **Anderson Group** (staging site `anderson-gro
 
 ## What it does
 
+
+
 ### Agent search (public)
 
-- **Syncs from Webflow CMS** — Fetches agents and taxonomy collections via the Webflow Data API v2, then denormalizes multi-reference fields (Areas Served, Specialties) into searchable strings.
+- **Syncs from Webflow CMS** — Fetches agents and taxonomy collections via the Webflow Data API, then denormalizes multi-reference fields (Areas Served, Specialties) into searchable strings.
 - **In-memory search index** — Builds a [MiniSearch](https://lucas.github.io/minisearch/) index for fuzzy name/text matching, faceted filtering, sorting, and pagination.
 - **Dynamic filter UI** — Search page with area, specialty, rating, REALTOR® badge, and free-text filters. Filter state lives in the URL so results are bookmarkable.
 - **Webflow DevLink styling** — Navbar and footer come from a DevLink export so the app matches the parent Webflow site.
+
+
 
 ### Agent portal (authenticated)
 
@@ -22,6 +26,8 @@ The default configuration targets **Anderson Group** (staging site `anderson-gro
 - **Agent ↔ CMS linking** — Auth0 `app_metadata` carries `webflow_agent_id` and `roles`; a Post Login Action adds custom JWT claims (`roles`, `agent_id`).
 - **Profile editor** (`/profile`) — Agents edit phone, address, bio, brokerage, license, website/company links, areas served, specialties, and profile photo. Saves update the live CMS item, publish it, invalidate the search index, and append an audit entry.
 - **Admin change log** (`/admin/changelog`) — Staff with the `admin` role see a paginated list of profile edits (field-level before/after), stored in Cloudflare KV.
+
+
 
 ## Architecture
 
@@ -58,89 +64,87 @@ This design avoids per-filter round trips to Webflow and scales to thousands of 
 
 All routes are prefixed by the Webflow Cloud mount path (`CLOUD_MOUNT_PATH` locally, e.g. `/find-an-agent` in production).
 
-| Route | Access | Description |
-| --- | --- | --- |
-| `/` | Public | Agent search page |
-| `/login` | Public | Portal hub — sign in, links to profile / change log |
-| `/profile` | Agent | Edit and publish own CMS profile |
-| `/admin/changelog` | Admin | Review profile edit audit log |
-| `/auth/login` | Public | Redirect to Auth0 |
-| `/auth/callback` | Public | OAuth callback; sets session cookie |
-| `/auth/logout` | Public | Clears session; redirects to login |
+
+| Route              | Access | Description                                         |
+| ------------------ | ------ | --------------------------------------------------- |
+| `/`                | Public | Agent search page                                   |
+| `/login`           | Public | Portal hub — sign in, links to profile / change log |
+| `/profile`         | Agent  | Edit and publish own CMS profile                    |
+| `/admin/changelog` | Admin  | Review profile edit audit log                       |
+| `/auth/login`      | Public | Redirect to Auth0                                   |
+| `/auth/callback`   | Public | OAuth callback; sets session cookie                 |
+| `/auth/logout`     | Public | Clears session; redirects to login                  |
+
+
+
 
 ## Filters & sorting
 
-| Dimension | Type |
-| --- | --- |
-| Agent name | Fuzzy text search |
-| Area | Single-select (from Areas collection) |
-| Specialty | Single-select (from Specialties collection) |
-| Rating | Minimum threshold (3+, 4+, 5) |
-| REALTOR® badge | Toggle |
-| Sort | Relevance, rating, sales, experience |
+
+| Dimension      | Type                                        |
+| -------------- | ------------------------------------------- |
+| Agent name     | Fuzzy text search                           |
+| Area           | Single-select (from Areas collection)       |
+| Specialty      | Single-select (from Specialties collection) |
+| Rating         | Minimum threshold (3+, 4+, 5)               |
+| REALTOR® badge | Toggle                                      |
+| Sort           | Relevance, rating, sales, experience        |
+
+
+
 
 ## Requirements
 
 - Node.js ≥ 22.12
-- A Webflow site API token with **`cms:read`**, **`cms:write`**, and **`assets:write`** (photos)
+- A Webflow site API token with `cms:read`, `cms:write`, and `assets:write` (photos)
 - An Auth0 Regular Web Application (for the agent portal)
 - Cloudflare KV namespace bound as `CHANGELOG_KV` (production / `wrangler preview`)
+
+
 
 ## Setup
 
 1. **Install dependencies**
-
-   ```sh
+  ```sh
    npm install
-   ```
-
+  ```
 2. **Configure environment**
-
-   ```sh
+  ```sh
    cp .env.example .env
-   ```
-
+  ```
    Set at minimum:
-
-   - `WEBFLOW_API_TOKEN` — see scopes above; run `npm run webflow:check-token` to verify `assets:write`.
-   - Auth0 vars — `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_CALLBACK_URL` (see `.env.example` for callback URL patterns).
-
+  - `WEBFLOW_API_TOKEN` — see scopes above; run `npm run webflow:check-token` to verify `assets:write`.
+  - Auth0 vars — `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_CALLBACK_URL` (see `.env.example` for callback URL patterns).
    Optional: `PUBLIC_SITE_URL` (agent profile preview links on the main site), collection ID overrides, `SEARCH_INDEX_TTL_SECONDS`.
-
 3. **Start the dev server**
-
-   ```sh
+  ```sh
    npm run dev
-   ```
-
+  ```
    Open [http://localhost:4321/CLOUD_MOUNT_PATH](http://localhost:4321/CLOUD_MOUNT_PATH) (Astro `base` is the mount-path placeholder until Webflow Cloud replaces it at deploy time).
-
 4. **(Optional) Prebuild a static search index**
-
-   ```sh
+  ```sh
    npm run build:index
-   ```
-
+  ```
 5. **(Optional) Generate Auth0 bulk-import file**
-
-   Creates `auth0-import.json` (gitignored) from CMS agent emails:
-
-   ```sh
-   npm run auth0:import
-   ```
-
+  Creates `auth0-import.json` (gitignored) from CMS agent emails:
    Upload in Auth0 Dashboard → User Management → Import Users. Each row includes `app_metadata.roles: ["agent"]` and `webflow_agent_id`. Configure a Post Login Action to copy those into JWT claims under `AUTH0_CLAIMS_NAMESPACE`.
+
+
 
 ## Commands
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Astro dev server (in-memory KV fallback for changelog) |
-| `npm run build` | Production build for Cloudflare Workers |
-| `npm run preview` | Build + `wrangler dev` (uses KV binding from `wrangler.json`) |
-| `npm run build:index` | Fetch CMS data and write `src/data/agents-index.json` |
-| `npm run auth0:import` | Generate `auth0-import.json` for Auth0 bulk user import |
-| `npm run webflow:check-token` | Verify API token has `assets:write` |
+
+| Command                       | Description                                                   |
+| ----------------------------- | ------------------------------------------------------------- |
+| `npm run dev`                 | Astro dev server (in-memory KV fallback for changelog)        |
+| `npm run build`               | Production build for Cloudflare Workers                       |
+| `npm run preview`             | Build + `wrangler dev` (uses KV binding from `wrangler.json`) |
+| `npm run build:index`         | Fetch CMS data and write `src/data/agents-index.json`         |
+| `npm run auth0:import`        | Generate `auth0-import.json` for Auth0 bulk user import       |
+| `npm run webflow:check-token` | Verify API token has `assets:write`                           |
+
+
+
 
 ## Project structure
 
@@ -174,20 +178,26 @@ src/
 webflow/                      # DevLink export (components + CSS)
 ```
 
+
+
 ## API
+
+
 
 ### `GET /api/search`
 
-| Param | Description |
-| --- | --- |
-| `q` | Free-text search (omit to browse all) |
-| `area` | Area slug filter |
-| `specialty` | Specialty slug filter |
-| `minRating` | Minimum rating (number) |
-| `realtor` | `1` or `true` for REALTOR® badge only |
-| `sort` | `relevance`, `rating`, `sales`, or `experience` |
-| `limit` | Page size (default 20, max 100) |
-| `offset` | Pagination offset |
+
+| Param       | Description                                     |
+| ----------- | ----------------------------------------------- |
+| `q`         | Free-text search (omit to browse all)           |
+| `area`      | Area slug filter                                |
+| `specialty` | Specialty slug filter                           |
+| `minRating` | Minimum rating (number)                         |
+| `realtor`   | `1` or `true` for REALTOR® badge only           |
+| `sort`      | `relevance`, `rating`, `sales`, or `experience` |
+| `limit`     | Page size (default 20, max 100)                 |
+| `offset`    | Pagination offset                               |
+
 
 Returns JSON with `results`, `total`, `facets` (areas and specialties with counts), and index metadata.
 
@@ -207,11 +217,13 @@ Admin-only. Returns paginated profile change entries from KV.
 
 Site ID: `6a3ee562ea51d6c9ddc156c7`
 
-| Collection | ID | Notes |
-| --- | --- | --- |
-| Agents | `6a3eeb88509425ae62309159` | Profile, stats, multi-refs |
-| Areas | `6a3ee7398f36f58b907d2df1` | Name, slug |
-| Specialties | `6a3ee77638f548e2e9600bb7` | Name, slug |
+
+| Collection  | ID                         | Notes                      |
+| ----------- | -------------------------- | -------------------------- |
+| Agents      | `6a3eeb88509425ae62309159` | Profile, stats, multi-refs |
+| Areas       | `6a3ee7398f36f58b907d2df1` | Name, slug                 |
+| Specialties | `6a3ee77638f548e2e9600bb7` | Name, slug                 |
+
 
 **Agents** — name, slug, headshot, first/last name, email, phone, address, bio, brokerage, license, website/company links, ratings and sales stats, price range, REALTOR® badge, listing counts, and multi-references to Areas and Specialties.
 
@@ -224,8 +236,8 @@ Webflow returns multi-reference fields as item ID arrays; this app resolves them
 1. Create a Regular Web Application; register callback and logout URLs under your Cloud mount path.
 2. Bulk-import agents with `npm run auth0:import` (uses CMS `email` field).
 3. Add a Post Login Action that reads `app_metadata.roles` and `app_metadata.webflow_agent_id` and sets custom claims:
-   - `{namespace}/roles`
-   - `{namespace}/agent_id`
+  - `{namespace}/roles`
+  - `{namespace}/agent_id`
 4. Set `AUTH0_CLAIMS_NAMESPACE` to match the Action (default: `https://anderson-group-stage.webflow.io`).
 5. Create at least one admin user manually with `app_metadata.roles: ["admin"]`.
 
@@ -238,12 +250,16 @@ Demo agents share a default password configured via `AUTH0_DEFAULT_PASSWORD` in 
 - Create a KV namespace for the changelog and set its id in `wrangler.json` under `CHANGELOG_KV` before production deploy.
 - After rotating `WEBFLOW_API_TOKEN`, update Webflow Cloud environment variables and restart the deployment.
 
+
+
 ## Adapting to another site
 
 1. Update collection IDs in `.env` (or defaults in `src/lib/webflow/config.ts`).
 2. Adjust field mappings in `src/lib/webflow/types.ts`, `agents.ts`, `document.ts`, and `lib/profile/fields.ts`.
 3. Customize the search UI in `src/pages/index.astro` and result cards in `src/lib/ui/card.ts`.
 4. Re-export DevLink components from your Webflow site into `webflow/`.
+
+
 
 ## License
 

@@ -366,6 +366,14 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
 
           <div class="profile__actions">
             <button class="btn btn--primary" type="submit">Save changes</button>
+            <a
+              class="btn btn--secondary"
+              href={previewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View profile
+            </a>
             <a class="btn btn--secondary" href={loginUrl}>Back to portal</a>
           </div>
         </form>
@@ -474,9 +482,20 @@ const previewUrl = agentPublicProfileUrl(profile.slug);
             credentials: "include",
             body: submitData,
           });
-          const json = await res.json().catch(() => ({}));
+          const raw = await res.text();
+          let json = {};
+          try {
+            json = raw ? JSON.parse(raw) : {};
+          } catch {
+            json = {};
+          }
           if (!res.ok) {
-            showStatus(json.message ?? json.error ?? "Save failed.", "error");
+            const detail =
+              json.message ??
+              json.error ??
+              (raw ? raw.slice(0, 200) : null) ??
+              `HTTP ${res.status}`;
+            showStatus(`Save failed (${res.status}): ${detail}`, "error");
             return;
           }
 
